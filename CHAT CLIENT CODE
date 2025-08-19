@@ -1,0 +1,52 @@
+import java.io.*;
+import java.net.*;
+
+/**
+ * Simple chat client.
+ * Usage:  java ChatClient localhost 5556
+ * Command: /quit to exit
+ */
+public class ChatClient {
+    public static void main(String[] args) {
+        String host = (args.length > 0) ? args[0] : "localhost";
+        int port    = (args.length > 1) ? Integer.parseInt(args[1]) : 5556; // must match ChatServer
+
+        try (
+            Socket socket = new Socket(host, port);
+            BufferedReader serverIn = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            PrintWriter serverOut   = new PrintWriter(socket.getOutputStream(), true);
+            BufferedReader userIn   = new BufferedReader(new InputStreamReader(System.in))
+        ) {
+            System.out.println("✅ Connected to " + host + ":" + port);
+
+            // Thread to continuously print server messages
+            Thread reader = new Thread(() -> {
+                try {
+                    String line;
+                    while ((line = serverIn.readLine()) != null) {
+                        System.out.println(line);
+                    }
+                } catch (IOException ignored) {}
+                System.out.println("❌ Disconnected from server.");
+                System.exit(0);
+            });
+            reader.setDaemon(true);
+            reader.start();
+
+            // First, server will ask for name
+            String prompt = serverIn.readLine();
+            if (prompt != null) System.out.print(prompt + " ");
+            String name = userIn.readLine();
+            serverOut.println(name);
+
+            // Loop: take input from console and send to server
+            String input;
+            while ((input = userIn.readLine()) != null) {
+                serverOut.println(input);
+                if (input.equalsIgnoreCase("/quit")) break;
+            }
+        } catch (IOException e) {
+            System.out.println("⚠️ Could not connect: " + e.getMessage());
+        }
+    }
+}
