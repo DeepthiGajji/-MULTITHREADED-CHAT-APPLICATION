@@ -1,0 +1,92 @@
+import java.io.*;
+import java.net.*;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+public class ChatServer {
+    private final int port;
+    private final CopyOnWriteArrayList<ClientHandler> clients = new CopyOnWriteArrayList<>();
+
+    public ChatServer(int port) { this.port = port; }
+
+    public void start() throws IOException {
+        try (ServerSocket server = createServerSocket()) {
+            System.out.println("✅ ChatServer running on port " + port);
+            while (true) {
+                Socket socket = server.accept();
+                ClientHandler handler = new ClientHandler(socket, this);
+                clients.add(handler);
+                new Thread(handler).start();
+            }
+        }
+    }
+
+    /** Create a ServerSocket with SO_REUSEADDR enabled */
+    private ServerSocket createServerSocket() throws IOException {
+        ServerSocket server = new ServerSocket();
+        server.setReuseAddress(true);   // allows reusing the port immediately
+        server.bind(new InetSocketAddress(port));
+        return server;
+    }
+
+    public void broadcast(String message, ClientHandler from) {
+        for (ClientHandler c : clients) {
+            if (c != from) c.send(message);
+        }
+        System.out.println(message);
+    }
+
+    public void remove(ClientHandler c) {
+        clients.remove(c);
+    }
+
+    public static void main(String[] args) throws IOException {
+        int port = 5556;  // fixed port
+        new ChatServer(port).start();
+    }
+
+    // ==================== INNER CLASS ====================
+    static class ClientHandler implements Runnable {
+        private final Socket socket;
+        private final ChatServer server;
+        private PrintWriter out;
+        private BufferedReader in;
+        private String name = "Anonymous";
+
+        ClientHandler(Socket socket, ChatServer server) {
+            this.socket = socket;
+            this.server = server;
+        }
+
+        public void run() {
+            try (
+                Socket s = socket;
+                BufferedReader r = new BufferedReader(new InputStreamReader(s.getInputStream()));
+                PrintWriter w = new PrintWriter(s.getOutputStream(), true)
+            ) {
+                this.out = w;
+                this.in  = r;
+
+                out.println("Enter your name:");
+                String n = in.readLine();
+                if (n != null && !n.isBlank()) name = n.trim();
+
+                server.broadcast("🟢 " + name + " joined the chat.", this);
+                out.println("Welcome, " + name + "! Type /quit to leave.");
+
+                String line;
+                while ((line = in.readLine()) != null) {
+                    if (line.equalsIgnoreCase("/quit")) break;
+                    server.broadcast("[" + name + "]: " + line, this);
+                }
+            } catch (IOException ignored) {
+            } finally {
+                server.remove(this);
+                server.broadcast("🔴 " + name + " left the chat.", this);
+            }
+        }
+
+        void send(String msg) {
+            if (out != null) out.println(msg);
+        }
+    }
+}
