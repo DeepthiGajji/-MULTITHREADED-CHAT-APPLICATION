@@ -1,0 +1,4 @@
+PS C:\Users\gajji\OneDrive\Desktop\Java tasks\Demoproject>  & 'C:\Program Files\Java\jdk-21\bin\java.exe' '-XX:+ShowCodeDetailsInExceptionMessages' '-cp' 'C:\Users\gajji\OneDrive\Desktop\Java tasks\Demoproject\bin' 'ChatClient' 
+? Connected to localhost:5556
+Enter your name: DEEPTHI
+Welcome, DEEPTHI! Type /quit to leave.
