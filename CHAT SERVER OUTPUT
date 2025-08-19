@@ -1,0 +1,2 @@
+PS C:\Users\gajji\OneDrive\Desktop\Java tasks\Demoproject>  & 'C:\Program Files\Java\jdk-21\bin\java.exe' '-XX:+ShowCodeDetailsInExceptionMessages' '-cp' 'C:\Users\gajji\OneDrive\Desktop\Java tasks\Demoproject\bin' 'ChatServer' 
+? ChatServer running on port 5556
